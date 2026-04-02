@@ -2,13 +2,14 @@
 # Your name: Cynthia Cao
 # Your student id: 48363225
 # Your email: cynthcao@umich.edu
-# Who or what you worked with on this homework (including generative AI like ChatGPT):
+# Who or what you worked with on this homework (including generative AI like ChatGPT): ChatGPT
 # If you worked with generative AI also add a statement for how you used it.
-# e.g.:
-# Asked ChatGPT for help debugging and understanding the JSON structure
-#
+# This homework was difficult for me so I asked ChatGPT to give me hints on how to get started. After that, 
+# I ran into a lot of failed tests and couldn't figure it out on my own so I used it again to help me understand 
+# what the errors meant and how to fix them. 
 # Did your use of GenAI on this assignment align with your goals and guidelines in your Gen AI contract? If not, why?
-#
+# It aligned with my contract because I didn't directly copy and paste code from ChatGPT, but instead, used it as a learning
+# opportunity to tweak my current code and understand why errors happened and how to fix it if I ever run into that issue in the future.
 # --- ARGUMENTS & EXPECTED RETURN VALUES PROVIDED --- #
 # --- SEE INSTRUCTIONS FOR FULL DETAILS ON METHOD IMPLEMENTATION --- #
 
