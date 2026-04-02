@@ -167,22 +167,28 @@ def get_groups_above_cutoff(cutoff, cache_file):
         A dictionary {group_uuid: count} for groups with count >= cutoff only.
     """
     cache = load_json(cache_file)
-    counts = {}
+    group_counts = {}
     for entry in cache.values():
         try:
-            group_id = entry['data']['relationships']['group']['data']['id']
-            if group_id:
-                if group_id in counts:
-                    counts[group_id] += 1
-            else:
-                counts[group_id] = 1
+            group_data = entry['data']['relationships'].get('group', {}).get('data')
+            if group_data and group_data.get('id'):
+                group_id = group_data['id']
+                group_counts[group_id] = group_counts.get(group_id, 0) +1
         except:
             continue
-    results = {}
-    for gid, count in counts.items():
-        if count >= cutoff:
-            results[gid] = count
-    return results
+    return {gid: count for gid, count in group_counts.items() if count >= cutoff}
+    #         if group_id:
+    #             if group_id in counts:
+    #                 counts[group_id] += 1
+    #         else:
+    #             counts[group_id] = 1
+    #     except:
+    #         continue
+    # results = {}
+    # for gid, count in counts.items():
+    #     if count >= cutoff:
+    #         results[gid] = count
+    # return results
     # pass
 
 
@@ -211,32 +217,40 @@ def recommend_breeds_in_same_group(breed_name, cache_file):
     if not cache:
         return "No breed data found in cache."
     target_group = None
-    found = False
+    breed_found = False
     for entry in cache.values():
         try:
             name = entry['data']['attributes']['name']
             if name.lower() == breed_name.lower():
-                found = True
-                target_group = entry['data']['relationships']['group']['data']['id']
-                if not target_group:
-                    return f"No group information avaliable for '{breed_name}'."
+                breed_found = True
+                group_entry = entry['data'].get('relationships', {}).get('group', {}).get('data')
+                if not group_entry or not group_entry.get('id'):
+                    return f"No group information available for '{breed_name}'."
+                target_group = group_entry['id']
+                break
+        #         found = True
+        #         target_group = entry['data']['relationships']['group']['data']['id']
+        #         if target_group is None:
+        #             return f"No group information avaliable for '{breed_name}'."
         except:
             continue
-    if not found:
+    if not breed_found:
         return f"'{breed_name}' is not in the cache."
     recommendations = []
     for entry in cache.values():
         try:
             name = entry['data']['attributes']['name']
-            group_id = entry['data']['relationships']['group']['data']['id']
+            group_entry = entry['data']['relationships'].get('group', {}).get('data')
+            if not group_entry or not group_entry.get('id'):
+                continue
+            group_id = group_entry['id']
             if group_id == target_group and name.lower() != breed_name.lower():
                 recommendations.append(name)
         except:
             continue
     if not recommendations:
-        return f"No recommendations found based on '{breed_name}'."
-    recommendations.sort()
-    return recommendations
+        return f"No group information available for '{breed_name}'."
+    return sorted(recommendations)
         
 
 
