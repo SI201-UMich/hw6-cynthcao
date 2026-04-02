@@ -75,7 +75,17 @@ def search_breed(breed_id):
         JSON body as a dict (with a top-level 'data' key on success), OR None if the
         request failed or the response does not represent a successful breed lookup.
     """
-    pass
+    url = f"https://dogapi.dog/api/v2/breeds/{breed_id}"
+    try: 
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            if 'data' in data:
+                return (data, url)
+        return None
+    except:
+        return None
+    # pass
 
 
 def update_cache(breed_ids, cache_file):
@@ -92,6 +102,21 @@ def update_cache(breed_ids, cache_file):
         A string: "Cached data for {percentage}% of breeds",
         where percentage = (successful_new_adds / len(breed_ids)) * 100.
     """
+    cache = load_json(cache_file)
+    success_count = 0
+
+    for breed_id in breed_ids:
+        url = f"https://dogapi.dog/api/v2/breeds/{breed_id}"
+        if url in cache:
+            continue
+        result = search_breed(breed_id)
+        if result is not None:
+            data, url = result
+            cache[url] = data
+            success_count += 1
+    create_cache(cache, cache_file)
+    percentage = (success_count / len(breed_ids)) * 100 if breed_ids else 0
+    return f"Cached data for {percentage}% of breeds"
     pass
 
 
@@ -107,7 +132,22 @@ def get_longest_lifespan_breed(cache_file):
         A tuple (breed_name, max_lifespan_integer) for the winning breed, OR the
         string "No breeds found" if no breed in the cache has a life.max value.
     """
-    pass
+    cache = load_json(cache_file)
+    max_life = -1
+    winner_name = ''
+    for entry in cache.values():
+        try:
+            name = entry['data']['attributes']['name']
+            life = entry['data']['attributes']['life'].get('max', None)
+            if life > max_life or (life == max_life and name < winner_name):
+                max_life = life
+                winner_name = name
+        except:
+            continue
+    if max_life == -1:
+        return "No breeds found"
+    return (winner_name, max_life)
+    # pass
 
 
 def get_groups_above_cutoff(cutoff, cache_file):
@@ -126,7 +166,24 @@ def get_groups_above_cutoff(cutoff, cache_file):
     RETURNS:
         A dictionary {group_uuid: count} for groups with count >= cutoff only.
     """
-    pass
+    cache = load_json(cache_file)
+    counts = {}
+    for entry in cache.values():
+        try:
+            group_id = entry['data']['relationships']['group']['data']['id']
+            if group_id:
+                if group_id in counts:
+                    counts[group_id] += 1
+            else:
+                counts[group_id] = 1
+        except:
+            continue
+    results = {}
+    for gid, count in counts.items():
+        if count >= cutoff:
+            results[gid] = count
+    return results
+    # pass
 
 
 # Extra Credit
@@ -150,6 +207,37 @@ def recommend_breeds_in_same_group(breed_name, cache_file):
             "No group information available for '{breed_name}'."  (no group id)
             "No recommendations found based on '{breed_name}'."  (no other breeds in that group)
     """
+    cache = load_json(cache_file)
+    if not cache:
+        return "No breed data found in cache."
+    target_group = None
+    found = False
+    for entry in cache.values():
+        try:
+            name = entry['data']['attributes']['name']
+            if name.lower() == breed_name.lower():
+                found = True
+                target_group = entry['data']['relationships']['group']['data']['id']
+                if not target_group:
+                    return f"No group information avaliable for '{breed_name}'."
+        except:
+            continue
+    if not found:
+        return f"'{breed_name}' is not in the cache."
+    recommendations = []
+    for entry in cache.values():
+        try:
+            name = entry['data']['attributes']['name']
+            group_id = entry['data']['relationships']['group']['data']['id']
+            if group_id == target_group and name.lower() != breed_name.lower():
+                recommendations.append(name)
+        except:
+            continue
+    if not recommendations:
+        return f"No recommendations found based on '{breed_name}'."
+    recommendations.sort()
+    return recommendations
+        
 
 
 class TestHomeworkDogAPI(unittest.TestCase):
@@ -374,7 +462,7 @@ class TestHomeworkDogAPI(unittest.TestCase):
     # -------------------------
     # extra credit - uncomment tests below to evaluate extra credit function
     # -------------------------
-    """
+    # """
     def test_recommend_breeds_in_same_group_empty_cache(self):
         create_cache({}, self.test_cache_file)
         self.assertEqual(
@@ -479,7 +567,7 @@ class TestHomeworkDogAPI(unittest.TestCase):
             recommend_breeds_in_same_group("breed a", self.test_cache_file),
             ["Breed B", "Breed Z"],
         )
-    """
+    # """
 
 
 if __name__ == "__main__":
