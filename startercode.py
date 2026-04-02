@@ -37,7 +37,7 @@ def load_json(filename):
         cannot be opened or is not valid JSON.
     """
     try:
-        with open(filename, 'r', encoding="utf-8") as f:
+        with open(filename, 'r') as f:
             return json.load(f)
     except:
         return {}
@@ -56,7 +56,7 @@ def create_cache(dictionary, filename):
     RETURNS:
         None
     """
-    with open(filename, 'w', encoding='utf-8') as f:
+    with open(filename, 'w') as f:
         json.dump(dictionary, f, indent=4)
     # pass
 
@@ -117,7 +117,7 @@ def update_cache(breed_ids, cache_file):
     create_cache(cache, cache_file)
     percentage = (success_count / len(breed_ids)) * 100 if breed_ids else 0
     return f"Cached data for {percentage}% of breeds"
-    pass
+    # pass
 
 
 def get_longest_lifespan_breed(cache_file):
@@ -146,7 +146,7 @@ def get_longest_lifespan_breed(cache_file):
             continue
     if max_life == -1:
         return "No breeds found"
-    return (winner_name, max_life)
+    return winner_name, max_life
     # pass
 
 
@@ -170,25 +170,13 @@ def get_groups_above_cutoff(cutoff, cache_file):
     group_counts = {}
     for entry in cache.values():
         try:
-            group_data = entry['data']['relationships'].get('group', {}).get('data')
-            if group_data and group_data.get('id'):
-                group_id = group_data['id']
+            group_info = entry['data']['relationships'].get('group', {}).get('data')
+            if group_info and 'id' in group_info:
+                group_id = group_info['id']
                 group_counts[group_id] = group_counts.get(group_id, 0) +1
         except:
             continue
     return {gid: count for gid, count in group_counts.items() if count >= cutoff}
-    #         if group_id:
-    #             if group_id in counts:
-    #                 counts[group_id] += 1
-    #         else:
-    #             counts[group_id] = 1
-    #     except:
-    #         continue
-    # results = {}
-    # for gid, count in counts.items():
-    #     if count >= cutoff:
-    #         results[gid] = count
-    # return results
     # pass
 
 
